@@ -1,0 +1,4 @@
+/home/islam/CppProjects/Tests/glad/CMakeFiles/glad-generate-files.dir
+/home/islam/CppProjects/Tests/glad/CMakeFiles/glad.dir
+/home/islam/CppProjects/Tests/glad/CMakeFiles/edit_cache.dir
+/home/islam/CppProjects/Tests/glad/CMakeFiles/rebuild_cache.dir
