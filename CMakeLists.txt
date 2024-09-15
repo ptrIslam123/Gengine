@@ -22,6 +22,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(external/glfw-3.3.5)
 add_subdirectory(external/glad)
 add_subdirectory(external/glm)
+add_subdirectory(atom)
 
 set(LIB_NAME ${PROJECT_NAME}_core)
 set(LIB_DIRS ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include)
@@ -56,7 +57,7 @@ endif()
 
 target_include_directories(${LIB_NAME} PUBLIC ${LIB_DIRS} glad/include glm)
 
-target_link_libraries(${LIB_NAME} PUBLIC glfw glad glm)
+target_link_libraries(${LIB_NAME} PUBLIC glfw glad glm atom)
 
 set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
