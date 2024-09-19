@@ -1,13 +1,19 @@
-#ifndef CORE_VERTEXT_BUFFER_OBJECT_H
-#define CORE_VERTEXT_BUFFER_OBJECT_H
+#ifndef CORE_GL_BUFFER_OBJ_BASE_H
+#define CORE_GL_BUFFER_OBJ_BASE_H
 
 #include <span>
+#include <type_traits>
 
 namespace gengine::core {
 
-class VertexBufferObject final {
+class GlBufferObjectBase {
 public:
     using IdType = unsigned int;
+
+    enum class TargetType {
+        ArrayBuffer,
+        ElementArrayBuffer,
+    };
 
     enum class UsageType {
         StaticDraw, // Данные будут загружены один раз и использоваться много раз(Статические геометрические данные, такие как вершины фигур, которые не меняются).
@@ -21,14 +27,14 @@ public:
         StreamCopy, // Данные будут загружены один раз и использоваться для копирования несколько раз(Данные, которые обновляются каждый кадр и используются для копирования только в текущем кадре).
     };
 
-    explicit VertexBufferObject();
-    ~VertexBufferObject();
+    explicit GlBufferObjectBase(TargetType target);
+    ~GlBufferObjectBase();
 
     IdType getId() const;
     template<typename T>
-    void fill(std::span<T> data, UsageType usage = UsageType::StreamDraw);
+    void fill(std::span<T> data, UsageType usage = UsageType::StaticDraw);
     template<typename T>
-    void fill(std::span<const T> data, UsageType usage = UsageType::StreamDraw);
+    void fill(std::span<const T> data, UsageType usage = UsageType::StaticDraw);
     void bind();
     void unbind();
     void clear();
@@ -38,18 +44,21 @@ private:
     void fillImpl(const void* start, SizeType sizeInBytes, UsageType usage);
 
     IdType m_id;
+    const unsigned int m_target;
 };
 
 template<typename T>
-inline void VertexBufferObject::fill(std::span<T> data, const UsageType usage) {
-    fillImpl(data.data(), data.size() * sizeof(T), usage);
+inline void GlBufferObjectBase::fill(std::span<T> data, const UsageType usage) {
+    static_assert(std::is_trivial_v<T>, "Data type must be trivial");
+    fillImpl(static_cast<const void*>(data.data()), data.size() * sizeof(T), usage);
 }
 
 template<typename T>
-inline void VertexBufferObject::fill(std::span<const T> data, const UsageType usage) {
-    fillImpl(data.data(), data.size() * sizeof(T), usage);
+inline void GlBufferObjectBase::fill(std::span<const T> data, const UsageType usage) {
+    static_assert(std::is_trivial_v<T>, "Data type must be trivial");
+    fillImpl(static_cast<const void*>(data.data()), data.size() * sizeof(T), usage);
 }
 
 } //! namespace gengine::core
 
-#endif //! CORE_VERTEXT_BUFFER_OBJECT_H
+#endif //! CORE_GL_BUFFER_OBJ_BASE_H

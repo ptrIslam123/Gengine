@@ -1,9 +1,14 @@
 #include <SDL2/SDL.h>
 #include "glad/glad.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "external/stb/stb_image.h"
+
 #include "include/core/primitives/shader/shader.h"
 #include "include/core/primitives/vertex/vbo.h"
+#include "include/core/primitives/vertex/ebo.h"
 #include "include/core/primitives/vertex/vao.h"
+#include "include/core/primitives/texture/texture.h"
 
 #include <exception>
 #include <iostream>
@@ -65,13 +70,13 @@ int main() {
 
     /** Создание шейдерной программы **/
     core::Shader shader;
-    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/vertex.shader"});
+    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/simple_2D_texture_vertex.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
     }
 
-    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/fragment.shader"});
+    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/simple_2D_texture_fragment.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
@@ -86,6 +91,8 @@ int main() {
     /** Генерация буфера на GPU и заполнения буфера данными о вершинах **/
     using VertexArrayObjectType = core::primitives::VertexArrayObject;
     using VertexBufferObjectType = core::primitives::VertexBufferObject;
+    using ElementBufferObjectType = core::primitives::ElementBufferObject;
+    using TextureType = core::primitives::Texture;
 
     VertexArrayObjectType vertexesAttr;
     vertexesAttr.bind();
@@ -93,9 +100,10 @@ int main() {
     VertexBufferObjectType vertexes;
     {
         const std::array vertexesData = {
-           0.5f, 1.0f, 0.0f,
-           -1.0f, -1.0f, 0.0f,
-           1.0f, -1.0f, 0.0f
+            0.5f, 0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+            -0.5f, 0.5f, 0.0f,
         };
 
         vertexes.bind();
@@ -110,9 +118,10 @@ int main() {
     VertexBufferObjectType colors;
     {
         const std::array colorsData = {
-           1.0f, 0.0f, 0.0f,
-           0.0f, 1.0f, 0.0f,
-           0.0f, 0.0f, 1.0f
+            1.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 0.0f
         };
 
         colors.bind();
@@ -124,7 +133,63 @@ int main() {
         colors.unbind();
     }
 
+    VertexBufferObjectType texturies;
+    {
+        const std::array texturiesData = {
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f
+        };
+
+        texturies.bind();
+        texturies.fill(texturiesData);
+        vertexesAttr.setVertexeAttributes<float>(
+                    VertexArrayObjectType::IndexType{2u},
+                    VertexArrayObjectType::ComponentSizeType{2u},
+                    VertexArrayObjectType::StrideType{static_cast<unsigned int>(sizeof(float) * 2)});
+        texturies.unbind();
+    }
+
+    ElementBufferObjectType indices;
+    {
+        const std::array indicesData = {
+            2u, 3u, 0u,
+            0u, 1u, 2u
+        };
+
+        indices.bind();
+        indices.fill(indicesData);
+        indices.unbind();
+    }
+
     vertexesAttr.unbind();
+
+    TextureType texture;
+    {
+        // Загрузка изображения
+        int width, height, nrChannels;
+        unsigned char* data = stbi_load("/home/islam/cpp/Gengine/examples/texturies/simple_2D_texture.jpg", &width, &height, &nrChannels, 0);
+        if (data) {
+            texture.bind();
+            texture.setUp({
+                              { GL_TEXTURE_WRAP_S,  GL_REPEAT },
+                              { GL_TEXTURE_WRAP_T, GL_REPEAT },
+                              { GL_TEXTURE_MIN_FILTER, GL_LINEAR },
+                              { GL_TEXTURE_MAG_FILTER, GL_LINEAR }
+            });
+            texture.fill(
+                        data,
+                        TextureType::WidthType{ static_cast<unsigned int>(width) },
+                        TextureType::HeightType{ static_cast<unsigned int>(height) },
+                        TextureType::FormatType::RGB
+            );
+            texture.unbind();
+        } else {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+    }
 
     // Основной цикл приложения
     bool running = true;
@@ -156,17 +221,22 @@ int main() {
         }
 
         // Очистка буфера цвета
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Активация шейдерной программы
         shader.usePrograme();
 
-        // Привязка вершинного массива
-        vertexesAttr.bind();
+        // Привязка текстуры
+        glActiveTexture(GL_TEXTURE0);
+        texture.bind();
 
-        // Рендеринг треугольников
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // Привязка VAO
+        vertexesAttr.bind();
+        indices.bind();
+
+        // Рендеринг
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Обновление окна
         SDL_GL_SwapWindow(window);

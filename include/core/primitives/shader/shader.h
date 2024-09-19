@@ -22,6 +22,7 @@ public:
     atom::utils::DefaultResult<void> loadFragmentShader(const PathType& path);
     atom::utils::DefaultResult<void> makeProgram();
 
+    void usePrograme();
     ShaderIdType getProgramId() const;
     void clear();
 

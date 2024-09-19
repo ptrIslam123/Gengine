@@ -24,6 +24,7 @@ find_package(SDL2 REQUIRED)
 add_subdirectory(external/glad)
 add_subdirectory(external/glm)
 add_subdirectory(atom)
+add_subdirectory(type_safe)
 
 set(CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(LIB_NAME ${PROJECT_NAME}_core)
@@ -57,7 +58,12 @@ else()
     add_library(${LIB_NAME} STATIC ${LIB_HDRS} ${LIB_SRCS})
 endif()
 
-target_include_directories(${LIB_NAME} PUBLIC ${LIB_DIRS} glad glm)
+target_include_directories(${LIB_NAME} PUBLIC ${LIB_DIRS}
+glad
+glm
+${CURRENT_SOURCE_DIR}/type_safe/include
+${CURRENT_SOURCE_DIR}/type_safe/external/debug_assert
+)
 
 # dependencies
 target_link_libraries(${LIB_NAME} PUBLIC glad glm atom)
@@ -88,5 +94,8 @@ endfunction(target_builder)
 if(BUILD_EXAMPLES)
     message(STATUS "BUILD_EXAMPLES=ON")
 
-    target_builder("triangles" "examples/triangles.cpp" "" "" "${PROJECT_NAME};SDL2::SDL2;glad" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "examples")
+    target_builder("triangles" "examples/triangles.cpp" "" "${CURRENT_SOURCE_DIR}/type_safe/include;${CURRENT_SOURCE_DIR}/type_safe/external/debug_assert" "${PROJECT_NAME};SDL2::SDL2;glad" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "examples")
+    target_builder("rectangle" "examples/rectangle.cpp" "" "${CURRENT_SOURCE_DIR}/type_safe/include;${CURRENT_SOURCE_DIR}/type_safe/external/debug_assert" "${PROJECT_NAME};SDL2::SDL2;glad" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "examples")
+    target_builder("moving_triangle" "examples/moving_triangle.cpp" "" "${CURRENT_SOURCE_DIR}/type_safe/include;${CURRENT_SOURCE_DIR}/type_safe/external/debug_assert;${CURRENT_SOURCE_DIR}/external/glm" "${PROJECT_NAME};SDL2::SDL2;glad" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "examples")
+    target_builder("simple_2D_texture" "examples/simple_2D_texture.cpp" "" "${CURRENT_SOURCE_DIR}/type_safe/include;${CURRENT_SOURCE_DIR}/type_safe/external/debug_assert;${CURRENT_SOURCE_DIR}/external/glm" "${PROJECT_NAME};SDL2::SDL2;glad" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "examples")
 endif()

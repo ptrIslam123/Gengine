@@ -1,6 +1,10 @@
 #include <SDL2/SDL.h>
 #include "glad/glad.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
 #include "include/core/primitives/shader/shader.h"
 #include "include/core/primitives/vertex/vbo.h"
 #include "include/core/primitives/vertex/vao.h"
@@ -13,6 +17,9 @@
 #include <sstream>
 
 using namespace gengine;
+
+int RightPos = 0;
+int UpPos = 0;
 
 int main() {
     // Инициализация SDL
@@ -65,13 +72,13 @@ int main() {
 
     /** Создание шейдерной программы **/
     core::Shader shader;
-    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/vertex.shader"});
+    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/rotation_triangle_vertex.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
     }
 
-    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/fragment.shader"});
+    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/rotation_triangle_fragment.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
@@ -93,9 +100,9 @@ int main() {
     VertexBufferObjectType vertexes;
     {
         const std::array vertexesData = {
-           0.5f, 1.0f, 0.0f,
-           -1.0f, -1.0f, 0.0f,
-           1.0f, -1.0f, 0.0f
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+             0.0f,  0.5f, 0.0f
         };
 
         vertexes.bind();
@@ -137,8 +144,20 @@ int main() {
                     running = false;
                     break;
                 case SDL_KEYDOWN:
-                    // Обработка нажатия клавиши
-                    std::cout << "Key pressed: " << e.key.keysym.sym << std::endl;
+                    switch (e.key.keysym.sym) {
+                        case SDLK_w:
+                            UpPos += 1;
+                            break;
+                        case SDLK_s:
+                            UpPos -= 1;
+                            break;
+                        case SDLK_a:
+                            RightPos -= 1;
+                            break;
+                        case SDLK_d:
+                            RightPos += 1;
+                            break;
+                    }
                     break;
                 case SDL_MOUSEMOTION:
                     // Обработка перемещения мыши
@@ -156,11 +175,31 @@ int main() {
         }
 
         // Очистка буфера цвета
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Активация шейдерной программы
         shader.usePrograme();
+
+        {
+            // Создание модельной матрицы
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::scale(model, glm::vec3(0.3, 0.3, 0.3)); // Уменьшили размер треугольника
+            model = glm::translate(model, glm::vec3(static_cast<float>(RightPos) * 0.9, static_cast<float>(UpPos) * 0.9, 0.0f)); // Перенос объекта
+
+            // Создание матрицы вида
+            glm::mat4 view = glm::mat4(1.0f);
+
+            // Создание матрицы проекции
+            glm::mat4 projection = glm::mat4(1.0f);
+
+            // Комбинирование матриц в одну матрицу MVP
+            glm::mat4 mvp = projection * view * model;
+
+            // Передача матрицы MVP в шейдер
+            GLuint mvpLoc = glGetUniformLocation(shader.getProgramId(), "mvp");
+            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+        }
 
         // Привязка вершинного массива
         vertexesAttr.bind();

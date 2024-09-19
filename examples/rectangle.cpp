@@ -3,6 +3,7 @@
 
 #include "include/core/primitives/shader/shader.h"
 #include "include/core/primitives/vertex/vbo.h"
+#include "include/core/primitives/vertex/ebo.h"
 #include "include/core/primitives/vertex/vao.h"
 
 #include <exception>
@@ -65,13 +66,13 @@ int main() {
 
     /** Создание шейдерной программы **/
     core::Shader shader;
-    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/vertex.shader"});
+    auto result = shader.loadVertexShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/rectangle_vertex.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
     }
 
-    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/resources/shaders/fragment.shader"});
+    result = shader.loadFragmentShader(core::Shader::PathType{"/home/islam/cpp/Gengine/examples/shaders/rectangle_fragment.shader"});
     if (!result) {
         std::cerr << result.error() << std::endl;
         return EXIT_FAILURE;
@@ -86,6 +87,7 @@ int main() {
     /** Генерация буфера на GPU и заполнения буфера данными о вершинах **/
     using VertexArrayObjectType = core::primitives::VertexArrayObject;
     using VertexBufferObjectType = core::primitives::VertexBufferObject;
+    using ElementBufferObjectType = core::primitives::ElementBufferObject;
 
     VertexArrayObjectType vertexesAttr;
     vertexesAttr.bind();
@@ -93,9 +95,10 @@ int main() {
     VertexBufferObjectType vertexes;
     {
         const std::array vertexesData = {
-           0.5f, 1.0f, 0.0f,
-           -1.0f, -1.0f, 0.0f,
-           1.0f, -1.0f, 0.0f
+            0.5f, 0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+            -0.5f, 0.5f, 0.0f,
         };
 
         vertexes.bind();
@@ -110,9 +113,10 @@ int main() {
     VertexBufferObjectType colors;
     {
         const std::array colorsData = {
-           1.0f, 0.0f, 0.0f,
-           0.0f, 1.0f, 0.0f,
-           0.0f, 0.0f, 1.0f
+            1.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 0.0f
         };
 
         colors.bind();
@@ -122,6 +126,18 @@ int main() {
                     VertexArrayObjectType::ComponentSizeType{3u},
                     VertexArrayObjectType::StrideType{static_cast<unsigned int>(sizeof(float) * 3)});
         colors.unbind();
+    }
+
+    ElementBufferObjectType indices;
+    {
+        const std::array indicesData = {
+            2u, 3u, 0u,
+            0u, 1u, 2u
+        };
+
+        indices.bind();
+        indices.fill(indicesData);
+        indices.unbind();
     }
 
     vertexesAttr.unbind();
@@ -164,9 +180,10 @@ int main() {
 
         // Привязка вершинного массива
         vertexesAttr.bind();
+        indices.bind();
 
         // Рендеринг треугольников
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Обновление окна
         SDL_GL_SwapWindow(window);

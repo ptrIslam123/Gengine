@@ -1,4 +1,4 @@
-#include "include/core/shader/shader.h"
+#include "include/core/primitives/shader/shader.h"
 
 #include <array>
 #include <fstream>
@@ -97,8 +97,11 @@ atom::utils::DefaultResult<void> Shader::compileShader(ShaderIdType& shaderId, c
     }
 }
 
-Shader::ShaderIdType Shader::getProgramId() const
-{
+void Shader::usePrograme() {
+    glUseProgram(getProgramId());
+}
+
+Shader::ShaderIdType Shader::getProgramId() const {
     return m_programId;
 }
 
